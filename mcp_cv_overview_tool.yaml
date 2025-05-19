@@ -1,0 +1,80 @@
+openapi: 3.0.0
+info:
+  title: MCP CV Overview Tool
+  version: v1.0.0
+  description: A tool to fetch an overview of the user's CVs and their fields from the MCP server.
+
+servers:
+  - url: http://localhost:3001 # Your MCP server address
+
+paths:
+  /mcp/tools/cv-overview:
+    get:
+      summary: Get User's CVs and Fields Overview
+      operationId: getCvOverview
+      description: |
+        Fetches a list of all CVs belonging to the authenticated user,
+        and for each CV, it fetches a list of its associated fields.
+        Use this when the user asks for a summary or overview of their CVs,
+        resumes, or professional documents managed by the system.
+      responses:
+        '200':
+          description: Successfully retrieved the CV overview.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    id:
+                      type: string
+                      format: uuid
+                      description: The ID of the CV.
+                    user_id:
+                      type: string
+                      format: uuid
+                      description: The ID of the user who owns the CV.
+                    title:
+                      type: string
+                      description: The title of the CV.
+                    created_at:
+                      type: string
+                      format: date-time
+                      description: The creation timestamp of the CV.
+                    fields:
+                      type: array
+                      description: A list of fields associated with this CV.
+                      items:
+                        type: object
+                        properties:
+                          id: { type: string, format: uuid }
+                          cv_id: { type: string, format: uuid }
+                          name: { type: string }
+                          field_type: { type: string }
+                          # Add other relevant field properties from your example
+                          display_order: { type: integer }
+                    error_fetching_fields: # Optional, if fetching fields for a CV failed
+                      type: string
+                      description: An error message if fetching fields for this specific CV failed.
+        '401':
+          description: Authentication failed. The user is not logged into the MCP server or the session is invalid.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error: { type: string }
+                  details: { type: string, nullable: true }
+        '500':
+          description: Internal server error on the MCP server.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error: { type: string }
+                  details: { type: string, nullable: true }
+      # No parameters are needed for this endpoint as it relies on the session
+      # for user context. If you were to pass parameters, they'd be defined here.
+      # parameters: []
