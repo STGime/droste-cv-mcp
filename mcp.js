@@ -37,6 +37,28 @@ const APP_TOOLS = [
     }
   },
   {
+        name: "getCvFields",
+        description: "Fetches all fields for a specific CV by CV ID.",
+        inputSchema: {
+          type: "object",
+          properties: {
+            cvId: { type: "string", description: "The CV ID to get fields for." }
+          },
+          required: ["cvId"]
+        }
+      },
+      {
+        name: "getFieldVersions",
+        description: "Fetches all versions for a specific field by field ID.",
+        inputSchema: {
+          type: "object",
+          properties: {
+            fieldId: { type: "string", description: "The field ID to get versions for." }
+          },
+          required: ["fieldId"]
+        }
+      },
+  {
     name: "triggerBackendAction",
     description: "Triggers a generic action on the backend server.",
     inputSchema: {
@@ -97,6 +119,12 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
       
       case "getCvOverview":
         return await handleGetCvOverview(args);
+
+      case "getCvFields":
+        return await handleGetCvFields(args);
+      
+      case "getFieldVersions":
+        return await handleGetFieldVersions(args);
       
       case "triggerBackendAction":
         return await handleTriggerBackendAction(args);
@@ -243,6 +271,105 @@ async function handleGetCvOverview(args) {
     };
   } catch (error) {
     throw new Error(`Failed to get CV overview: ${error.message}`);
+  }
+}
+
+
+async function handleGetCvFields(args) {
+  if (!sessionToken) {
+    throw new Error("Please login first using the loginToMcp tool");
+  }
+
+  const { cvId } = args;
+  
+  if (!cvId) {
+    throw new Error("cvId is required");
+  }
+
+  try {
+    console.error('[GET_CV_FIELDS] Fetching fields for CV ID:', cvId);
+    
+    const response = await fetch(`${EXISTING_SERVER_URL}/api/cvs/${cvId}/fields`, {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${sessionToken}`,
+        'Content-Type': 'application/json',
+      }
+    });
+
+    console.error('[GET_CV_FIELDS] Response status:', response.status);
+
+    if (!response.ok) {
+      if (response.status === 401) {
+        sessionToken = null;
+        throw new Error("Authentication expired. Please login again.");
+      }
+      throw new Error(`Failed to fetch CV fields: ${response.statusText}`);
+    }
+
+    const data = await response.json();
+    console.error('[GET_CV_FIELDS] Received data:', JSON.stringify(data, null, 2));
+    
+    return {
+      content: [
+        {
+          type: "text",
+          text: JSON.stringify(data, null, 2)
+        }
+      ]
+    };
+  } catch (error) {
+    console.error('[GET_CV_FIELDS] Error:', error);
+    throw new Error(`Failed to get CV fields: ${error.message}`);
+  }
+}
+
+async function handleGetFieldVersions(args) {
+  if (!sessionToken) {
+    throw new Error("Please login first using the loginToMcp tool");
+  }
+
+  const { fieldId } = args;
+  
+  if (!fieldId) {
+    throw new Error("fieldId is required");
+  }
+
+  try {
+    console.error('[GET_FIELD_VERSIONS] Fetching versions for field ID:', fieldId);
+    
+    const response = await fetch(`${EXISTING_SERVER_URL}/api/fields/${fieldId}/versions`, {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${sessionToken}`,
+        'Content-Type': 'application/json',
+      }
+    });
+
+    console.error('[GET_FIELD_VERSIONS] Response status:', response.status);
+
+    if (!response.ok) {
+      if (response.status === 401) {
+        sessionToken = null;
+        throw new Error("Authentication expired. Please login again.");
+      }
+      throw new Error(`Failed to fetch field versions: ${response.statusText}`);
+    }
+
+    const data = await response.json();
+    console.error('[GET_FIELD_VERSIONS] Received data:', JSON.stringify(data, null, 2));
+    
+    return {
+      content: [
+        {
+          type: "text",
+          text: JSON.stringify(data, null, 2)
+        }
+      ]
+    };
+  } catch (error) {
+    console.error('[GET_FIELD_VERSIONS] Error:', error);
+    throw new Error(`Failed to get field versions: ${error.message}`);
   }
 }
 
